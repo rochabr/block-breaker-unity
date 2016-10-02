@@ -3,15 +3,24 @@ using System.Collections;
 
 public class Brick : MonoBehaviour {
 
+	public AudioClip crack;
 	public Sprite[] hitSprites;
+	public GameObject smoke;
+	public static int breakableCount = 0;
 
 	private int timesHit;
 	private LevelManager levelManager;
+	private bool isBreakable;
 
 	// Use this for initialization
 	void Start () {
-		timesHit = 0;
+		isBreakable = (this.tag == "Breakable");
+		if (isBreakable) {
+			//increasing the number of breakable bricks in the scene
+			breakableCount++;
+		}
 
+		timesHit = 0;
 		levelManager = GameObject.FindObjectOfType<LevelManager> ();
 	}
 	
@@ -21,7 +30,8 @@ public class Brick : MonoBehaviour {
 	}
 
 	void OnCollisionEnter2D (Collision2D collision){
-		if (this.tag == "Breakable") {
+		AudioSource.PlayClipAtPoint (crack, transform.position);
+		if (isBreakable) {
 			HandleHits ();
 		}
 	}
@@ -31,10 +41,21 @@ public class Brick : MonoBehaviour {
 
 		int maxHits = hitSprites.Length + 1;
 		if (timesHit >= maxHits) {
+			//decreasing number of breakable objects
+			breakableCount--;
+			levelManager.BrickDestroyed ();
+
+			PuffSmoke ();
 			Destroy (gameObject);
 		} else {
 			LoadSprite ();
 		}
+	}
+
+	void PuffSmoke ()
+	{
+		GameObject destroySmoke = Instantiate (smoke, transform.position, Quaternion.identity) as GameObject;
+		destroySmoke.GetComponent<ParticleSystem> ().startColor = GetComponent<SpriteRenderer> ().color;
 	}
 
 	private void LoadSprite(){
